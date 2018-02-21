@@ -4,12 +4,20 @@ import {
     Text,
     TextInput,
     View,
-    TouchableOpacity
+    TouchableOpacity,
+    ActivityIndicator
 } from 'react-native';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import * as color from '../utils/colors';
-import { summonerLookup, hideErrorMessages } from '../actions';
+import {
+    getBySummonerName,
+    hideErrorMessages,
+    clearCurrentSummoner
+} from '../actions';
 import { connect } from 'react-redux';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import SummonerOverview from './SummonerOverview';
+import Favorites from './Favorites';
 
 class Search extends React.Component {
     state = { summonerName: '' };
@@ -21,9 +29,24 @@ class Search extends React.Component {
         headerTintColor: color.light_gray
     };
 
+    /*
+     * _handleChangeText handles input text onChangeText
+     * and checks to see if any errors, if so hide them.
+     * It will also check to see if any data is currently
+     *  in redux, if so clear it. finally it updates state.
+     */
+    _handleChangeText = summonerName => {
+        if (this.props.error) {
+            this.props.hideErrorMessages();
+        }
+        if (!summonerName || this.props.data) this.props.clearCurrentSummoner();
+
+        this.setState({ summonerName });
+    };
+
     render() {
-        const { error } = this.props;
-        console.log(error);
+        const { error, isFetching, data } = this.props;
+
         return (
             <View style={styles.container}>
                 <View style={styles.header}>
@@ -31,7 +54,6 @@ class Search extends React.Component {
                         style={[
                             styles.textInput,
                             {
-                                //borderRadius: 4,
                                 borderWidth: error ? 1 : 0.5,
                                 borderColor: error ? 'red' : 'gray',
                                 shadowColor: error ? 'red' : 'gray',
@@ -43,34 +65,37 @@ class Search extends React.Component {
                                 shadowRadius: error ? 2 : 1
                             }
                         ]}
-                        showLoading={this.props.isFetching}
+                        autoCapitalize="none"
                         value={this.state.summonerName}
                         placeholder="Search for a Summoner"
-                        onChangeText={summonerName => {
-                            this.props.hideErrorMessages();
-
-                            this.setState({ summonerName });
-                        }}
+                        onChangeText={this._handleChangeText}
                         enablesReturnKeyAutomatically
                         onSubmitEditing={() => {
                             if (!this.state.summonerName) {
                                 return;
                             }
-                            this.props.summonerLookup(this.state.summonerName);
+                            this.props.getBySummonerName(
+                                this.state.summonerName
+                            );
                         }}
                         clearButtonMode="while-editing"
                     />
-                    {/* <TouchableOpacity
-                        style={styles.button}
-                        onPress={() => {
-                            if (!this.state.summonerName) {
-                                return;
-                            }
-                            this.props.summonerLookup(this.state.summonerName);
-                        }}>
-                        <Text style={{ textAlign: 'center' }}>Search</Text>
-                    </TouchableOpacity> */}
+                    {isFetching && <ActivityIndicator size="large" />}
                 </View>
+                {data &&
+                    !error && (
+                        <View style={{ alignSelf: 'stretch' }}>
+                            <SummonerOverview summoner={data} />
+                        </View>
+                    )}
+                {this.props.favorites && (
+                    <View style={{ alignSelf: 'stretch' }}>
+                        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+                            Favorites
+                        </Text>
+                        <Favorites />
+                    </View>
+                )}
 
                 <Text style={styles.error}>{this.props.error}</Text>
             </View>
@@ -81,12 +106,15 @@ class Search extends React.Component {
 const mapStateToProps = state => ({
     data: state.data,
     error: state.error,
-    isFetching: state.isFetching
+    isFetching: state.isFetching,
+    favorites: state.bookmarked
 });
 
 const mapDispatchToProps = dispatch => ({
-    summonerLookup: summonerName => dispatch(summonerLookup(summonerName)),
-    hideErrorMessages: () => dispatch(hideErrorMessages())
+    getBySummonerName: summonerName =>
+        dispatch(getBySummonerName(summonerName)),
+    hideErrorMessages: () => dispatch(hideErrorMessages()),
+    clearCurrentSummoner: () => dispatch(clearCurrentSummoner())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Search);
@@ -96,7 +124,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-start',
         alignItems: 'center',
-        backgroundColor: color.cream
+        backgroundColor: color.dark_gray
     },
     header: {
         alignSelf: 'stretch',

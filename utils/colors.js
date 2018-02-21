@@ -15,4 +15,3 @@ export const dark_brown = '#654321';
 export const cream = '#edeedb';
 export const dark_green = '#317873';
 export const off_white = '#f6f1e9';
-export const gray2 = '#FBFBFB';
