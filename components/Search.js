@@ -2,14 +2,13 @@ import React from 'react';
 import {
     StyleSheet,
     Text,
+    TextInput,
     View,
-    KeyboardAvoidingView,
     TouchableOpacity
 } from 'react-native';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
-import { Sae } from 'react-native-textinput-effects';
 import * as color from '../utils/colors';
-import { summonerLookup } from '../actions';
+import { summonerLookup, hideErrorMessages } from '../actions';
 import { connect } from 'react-redux';
 
 class Search extends React.Component {
@@ -17,59 +16,77 @@ class Search extends React.Component {
     static navigationOptions = {
         title: 'Summoner Lookup',
         headerStyle: {
-            backgroundColor: '#131e3a'
+            backgroundColor: color.green
         },
-        headerTintColor: '#edf9ff'
+        headerTintColor: color.light_gray
     };
 
     render() {
+        const { error } = this.props;
+        console.log(error);
         return (
-            <KeyboardAvoidingView style={styles.container}>
-                <Text style={styles.headerText}>EZ.GG</Text>
+            <View style={styles.container}>
                 <View style={styles.header}>
-                    <Sae
-                        style={{
-                            marginBottom: 40
-                        }}
-                        label={'Enter Summoner Name'}
-                        iconClass={FontAwesomeIcon}
-                        iconName={'pencil'}
-                        iconColor={color.yellow}
-                        labelStyle={{
-                            color: color.white
-                        }}
-                        autoCapitalize={'none'}
-                        autoCorrect={false}
-                        onChangeText={text =>
-                            this.setState({
-                                summonerName: text
-                            })
-                        }
-                    />
-                </View>
-                <View style={{ justifyContent: 'center' }}>
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() =>
-                            this.props.summonerLookup(this.state.summonerName)
-                        }>
-                        <Text style={{ textAlign: 'center' }}>Search</Text>
-                    </TouchableOpacity>
+                    <TextInput
+                        style={[
+                            styles.textInput,
+                            {
+                                //borderRadius: 4,
+                                borderWidth: error ? 1 : 0.5,
+                                borderColor: error ? 'red' : 'gray',
+                                shadowColor: error ? 'red' : 'gray',
+                                shadowOffset: {
+                                    width: error ? 4 : 2,
+                                    height: error ? 4 : 2
+                                },
+                                shadowOpacity: 1,
+                                shadowRadius: error ? 2 : 1
+                            }
+                        ]}
+                        showLoading={this.props.isFetching}
+                        value={this.state.summonerName}
+                        placeholder="Search for a Summoner"
+                        onChangeText={summonerName => {
+                            this.props.hideErrorMessages();
 
-                    <Text style={styles.error}>{this.props.error}</Text>
+                            this.setState({ summonerName });
+                        }}
+                        enablesReturnKeyAutomatically
+                        onSubmitEditing={() => {
+                            if (!this.state.summonerName) {
+                                return;
+                            }
+                            this.props.summonerLookup(this.state.summonerName);
+                        }}
+                        clearButtonMode="while-editing"
+                    />
+                    {/* <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => {
+                            if (!this.state.summonerName) {
+                                return;
+                            }
+                            this.props.summonerLookup(this.state.summonerName);
+                        }}>
+                        <Text style={{ textAlign: 'center' }}>Search</Text>
+                    </TouchableOpacity> */}
                 </View>
-            </KeyboardAvoidingView>
+
+                <Text style={styles.error}>{this.props.error}</Text>
+            </View>
         );
     }
 }
 
 const mapStateToProps = state => ({
     data: state.data,
-    error: state.error
+    error: state.error,
+    isFetching: state.isFetching
 });
 
 const mapDispatchToProps = dispatch => ({
-    summonerLookup: summonerName => dispatch(summonerLookup(summonerName))
+    summonerLookup: summonerName => dispatch(summonerLookup(summonerName)),
+    hideErrorMessages: () => dispatch(hideErrorMessages())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Search);
@@ -77,39 +94,23 @@ export default connect(mapStateToProps, mapDispatchToProps)(Search);
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        backgroundColor: 'black',
-        padding: 15
+        backgroundColor: color.cream
     },
     header: {
         alignSelf: 'stretch',
-        justifyContent: 'center',
-        marginLeft: 20,
-        marginRight: 20
+        justifyContent: 'flex-start'
     },
-    button: {
-        width: 200,
+    textInput: {
         padding: 15,
-        backgroundColor: color.orange,
-        borderRadius: 6,
-        borderWidth: 0.5,
-        borderColor: 'gray',
-        shadowColor: 'gray',
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 1,
+        backgroundColor: color.white,
         marginBottom: 10
     },
-    headerText: {
-        textAlign: 'center',
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: color.light_blue,
-        marginBottom: 15
-    },
+
     error: {
         color: color.red,
-        textAlign: 'center'
+        textAlign: 'center',
+        fontWeight: 'bold'
     }
 });

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import configureStore from './configureStore';
 import MainNavigation from './Navigation';
 import StyledStatusBar from './components/StatusBar';
+import * as color from './utils/colors';
 
 export default class App extends React.Component {
     render() {
@@ -13,7 +14,7 @@ export default class App extends React.Component {
             <Provider store={store}>
                 <View style={styles.container}>
                     <StyledStatusBar
-                        backgroundColor="#131e3a"
+                        backgroundColor={color.green}
                         barStyle="light-content"
                     />
                     <MainNavigation />
